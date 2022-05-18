@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <title>Pinger client</title>
+  </head>
+  <body>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.js" type="text/javascript"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+
+    <script type="text/javascript">
+
+
+    hosts = {}
+client = new Paho.MQTT.Client('127.0.0.1', 9001, "clientId");
+
+// set callback handlers
+client.onConnectionLost = onConnectionLost;
+client.onMessageArrived = onMessageArrived;
+
+// connect the client
+client.connect({onSuccess:onConnect});
+
+// called when the client connects
+function onConnect() {
+  // Once a connection has been made, make a subscription and send a message.
+  console.log("onConnect");
+  client.subscribe("ping/#");
+
+}
+
+// called when the client loses its connection
+function onConnectionLost(responseObject) {
+  if (responseObject.errorCode !== 0) {
+    console.log("onConnectionLost:"+responseObject.errorMessage);
+  }
+}
+
+
+// called when a message arrives
+function onMessageArrived(message) {
+  //console.log("onMessageArrived:"+message.payloadString);
+    update = JSON.parse(message.payloadString);
+
+//sample message
+//{"host": "some-host", 
+//"description": "test a", 
+//"raw": "Reply from 172.28.0.3, 9 bytes in 16.49ms\r\nReply from 172.28.0.3, 9 bytes in 16.34ms\r\nReply from 172.28.0.3, 9 bytes in 17.06ms\r\n\r\nRound Trip Times min/avg/max is 16.34/16.63/17.06 ms",
+// "numOk": 3, 
+// "rtt": "16.34/16.63/17.06", 
+//"ok": true} 
+
+    // check that element exists, if not, create
+    if (!document.getElementById(update["host"])) {
+        console.log("does not exist");
+        var newDiv = document.createElement("DIV");
+        newDiv.id = update["host"];
+        newDiv.classList.add("col-sm");
+        newDiv.classList.add("alert");
+        newDiv.style.marginBottom = '2px';
+        //newDiv.style.paddingBottom = '6px';
+        
+        document.getElementById("rows").appendChild(newDiv);
+        
+    }
+    updateHost(update);
+
+}
+
+function updateHost(update) {
+    var newDiv = document.getElementById(update["host"]);
+    newDiv.classList.remove("alert-success");
+    newDiv.classList.remove("alert-danger");
+    if (update["ok"]) { 
+        newDiv.classList.add("alert-success");
+    } else {
+        newDiv.classList.add("alert-danger");
+    }
+    newDiv.innerHTML = "<h5 class=alert-heading>" + update["host"] + "</h5><p class=font-weight-lighter style='font-size: 0.7em'>" + update["description"] + "<br>" + update["rtt"] + "</p>";
+}
+
+    </script>
+
+
+
+<div class="container">
+    <div class=row id="rows">
+  
+    </div>
+</div>
+
+
+
+</body>
+</html>
